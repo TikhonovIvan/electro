@@ -715,6 +715,7 @@ textarea.input {
 }
 
 .pagination-block {
+  margin-top: 50px;
   display: flex;
   justify-content: center;
 }

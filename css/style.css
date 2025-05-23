@@ -450,6 +450,12 @@ textarea.input {
   justify-content: space-between;
   gap: 40px;
 }
+.wrapper-row-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+}
 
 /*----------------------------*\
 	Search

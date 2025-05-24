@@ -30,16 +30,44 @@ document.addEventListener('DOMContentLoaded', function () {
   const cartItemCount = document.getElementById('cart-item-count');
   const cartTotalPrice = document.getElementById('cart-total-price');
 
+  // --- Checkout summary ---
+  const checkoutProducts = document.getElementById('checkout-products');
+  const checkoutTotal = document.getElementById('checkout-total');
+
   // Загрузка корзины из localStorage
   let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-  // Сохранение корзины в localStorage
+  // Сохранение корзины
   function saveCart() {
     localStorage.setItem('cart', JSON.stringify(cart));
   }
 
+  // Обновление блока "Ваш заказ"
+  function updateCheckoutSummary() {
+    if (!checkoutProducts || !checkoutTotal) return;
+
+    checkoutProducts.innerHTML = '';
+    let totalPrice = 0;
+
+    cart.forEach(item => {
+      const productRow = document.createElement('div');
+      productRow.classList.add('order-col');
+      productRow.innerHTML = `
+        <div>${item.qty}x ${item.name}</div>
+        <div>${(item.qty * item.price).toFixed(2)} сом</div>
+      `;
+      checkoutProducts.appendChild(productRow);
+
+      totalPrice += item.qty * item.price;
+    });
+
+    checkoutTotal.textContent = `${totalPrice.toFixed(2)} сом`;
+  }
+
   // Обновление отображения корзины
   function updateCartDisplay() {
+    if (!cartList) return;
+    
     cartList.innerHTML = '';
     let totalQty = 0;
     let totalPrice = 0;
@@ -66,43 +94,34 @@ document.addEventListener('DOMContentLoaded', function () {
       totalPrice += item.price * item.qty;
     });
 
-    // Мгновенное обновление всех счетчиков
-    updateCartCounters(totalQty, totalPrice);
-    saveCart();
-  }
+    if (cartTotalQty) cartTotalQty.textContent = totalQty;
+    if (cartItemCount) cartItemCount.textContent = cart.length;
+    if (cartTotalPrice) cartTotalPrice.textContent = totalPrice.toFixed(2);
 
-  // Функция для мгновенного обновления счетчиков
-  function updateCartCounters(totalQty, totalPrice) {
-    cartTotalQty.textContent = totalQty;
-    cartItemCount.textContent = cart.length; // Количество уникальных товаров
-    cartTotalPrice.textContent = totalPrice;
-    
-    // Обновление иконки корзины в шапке
-    const cartIcons = document.querySelectorAll('.cart-icon, .dropdown-toggle');
-    cartIcons.forEach(icon => {
-      const counter = icon.querySelector('.qty, #cart-total-qty');
-      if (counter) {
-        counter.textContent = cart.length;
-      }
-    });
+    saveCart();
+    updateCheckoutSummary(); // Обновляем блок "Ваш заказ"
   }
 
   // Инициализация корзины
   updateCartDisplay();
 
-  // Обработчики открытия/закрытия корзины
-  toggle?.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dropdown.classList.toggle('open');
-  });
+  // Открытие/закрытие корзины
+  if (toggle) {
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+  }
 
-  dropdownContent?.addEventListener('click', function (e) {
-    e.stopPropagation();
-  });
+  if (dropdownContent) {
+    dropdownContent.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  }
 
   document.addEventListener('click', function () {
-    dropdown.classList.remove('open');
+    if (dropdown) dropdown.classList.remove('open');
   });
 
   // Добавление товара в корзину
@@ -123,131 +142,120 @@ document.addEventListener('DOMContentLoaded', function () {
         cart.push({ id, name, price, img, qty });
       }
 
-      // Мгновенное обновление
-      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-      const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-      updateCartCounters(totalQty, totalPrice);
-      
-      // Полное обновление отображения
-      setTimeout(updateCartDisplay, 0);
+      this.classList.add('added');
+      setTimeout(() => this.classList.remove('added'), 500);
+
+      updateCartDisplay();
     });
   });
 
-  // Удаление товара из корзины с анимацией
-  cartList.addEventListener('click', function (e) {
-    const deleteBtn = e.target.closest('.delete');
-    if (deleteBtn) {
-      const index = parseInt(deleteBtn.dataset.index);
-      if (!isNaN(index)) {
-        // Анимация удаления
-        const itemToRemove = deleteBtn.closest('.cart-item');
-        itemToRemove.classList.add('removing');
-        
-        // Мгновенное обновление данных
-        const removedQty = cart[index].qty;
-        const removedPrice = cart[index].price * cart[index].qty;
-        cart.splice(index, 1);
-        
-        // Мгновенное обновление счетчиков
-        const totalQty = parseInt(cartTotalQty.textContent) - removedQty;
-        const totalPrice = parseInt(cartTotalPrice.textContent) - removedPrice;
-        updateCartCounters(totalQty, totalPrice);
-        
-        // Полное обновление после анимации
-        setTimeout(() => {
-          updateCartDisplay();
-          saveCart();
-        }, 300);
-      }
-    }
-  });
-
-  
-  // --- Остальной код (слайдеры и прочее) ---
-  document.querySelectorAll('.products-slick').forEach(el => {
-    const nav = el.getAttribute('data-nav');
-    $(el).slick({
-      slidesToShow: 4,
-      slidesToScroll: 1,
-      autoplay: true,
-      infinite: true,
-      speed: 300,
-      dots: false,
-      arrows: true,
-      appendArrows: nav ? nav : false,
-      responsive: [
-        { breakpoint: 991, settings: { slidesToShow: 2, slidesToScroll: 1 } },
-        { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } }
-      ]
-    });
-  });
-
-  document.querySelectorAll('.products-widget-slick').forEach(el => {
-    const nav = el.getAttribute('data-nav');
-    $(el).slick({
-      infinite: true,
-      autoplay: true,
-      speed: 300,
-      dots: false,
-      arrows: true,
-      appendArrows: nav ? nav : false
-    });
-  });
-
-  if ($('#product-main-img').length) {
-    $('#product-main-img').slick({
-      infinite: true,
-      speed: 300,
-      dots: false,
-      arrows: true,
-      fade: true,
-      asNavFor: '#product-imgs'
-    });
-
-    $('#product-imgs').slick({
-      slidesToShow: 3,
-      slidesToScroll: 1,
-      arrows: true,
-      centerMode: true,
-      focusOnSelect: true,
-      centerPadding: 0,
-      vertical: true,
-      asNavFor: '#product-main-img',
-      responsive: [
-        {
-          breakpoint: 991,
-          settings: { vertical: false, arrows: false, dots: true }
+  // Удаление товара
+  if (cartList) {
+    cartList.addEventListener('click', function (e) {
+      const deleteBtn = e.target.closest('.delete');
+      if (deleteBtn) {
+        const index = parseInt(deleteBtn.dataset.index);
+        if (!isNaN(index)) {
+          const itemToRemove = deleteBtn.closest('.cart-item');
+          if (itemToRemove) {
+            itemToRemove.classList.add('removing');
+            setTimeout(() => {
+              cart.splice(index, 1);
+              updateCartDisplay();
+            }, 300);
+          }
         }
-      ]
+      }
     });
-
-    $('#product-main-img .product-preview').zoom();
   }
 
-  // Обработчики количества товаров
+  // --- Products Slick ---
+  if (typeof $ !== 'undefined') {
+    document.querySelectorAll('.products-slick').forEach(el => {
+      const nav = el.getAttribute('data-nav');
+      $(el).slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        autoplay: true,
+        infinite: true,
+        speed: 300,
+        dots: false,
+        arrows: true,
+        appendArrows: nav ? nav : false,
+        responsive: [
+          { breakpoint: 991, settings: { slidesToShow: 2, slidesToScroll: 1 } },
+          { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } }
+        ]
+      });
+    });
+
+    document.querySelectorAll('.products-widget-slick').forEach(el => {
+      const nav = el.getAttribute('data-nav');
+      $(el).slick({
+        infinite: true,
+        autoplay: true,
+        speed: 300,
+        dots: false,
+        arrows: true,
+        appendArrows: nav ? nav : false
+      });
+    });
+
+    if ($('#product-main-img').length) {
+      $('#product-main-img').slick({
+        infinite: true,
+        speed: 300,
+        dots: false,
+        arrows: true,
+        fade: true,
+        asNavFor: '#product-imgs'
+      });
+
+      $('#product-imgs').slick({
+        slidesToShow: 3,
+        slidesToScroll: 1,
+        arrows: true,
+        centerMode: true,
+        focusOnSelect: true,
+        centerPadding: 0,
+        vertical: true,
+        asNavFor: '#product-main-img',
+        responsive: [
+          {
+            breakpoint: 991,
+            settings: { vertical: false, arrows: false, dots: true }
+          }
+        ]
+      });
+
+      $('#product-main-img .product-preview').zoom();
+    }
+  }
+
+  // --- Input Number ---
   document.querySelectorAll('.input-number').forEach(el => {
     const input = el.querySelector('input[type="number"]');
     const up = el.querySelector('.qty-up');
     const down = el.querySelector('.qty-down');
 
-    down.addEventListener('click', () => {
+    if (down) down.addEventListener('click', () => {
       let value = parseInt(input.value) - 1;
       input.value = value < 1 ? 1 : value;
       input.dispatchEvent(new Event('change'));
     });
 
-    up.addEventListener('click', () => {
+    if (up) up.addEventListener('click', () => {
       input.value = parseInt(input.value) + 1;
       input.dispatchEvent(new Event('change'));
     });
   });
 
-  // Фильтр по цене
+  // --- Price Slider ---
   const priceInputMax = document.getElementById('price-max');
   const priceInputMin = document.getElementById('price-min');
   const priceSlider = document.getElementById('price-slider');
 
-  if (priceSlider) {
+  if (priceSlider && typeof noUiSlider !== 'undefined') {
     noUiSlider.create(priceSlider, {
       start: [1, 999],
       connect: true,
@@ -258,9 +266,9 @@ document.addEventListener('DOMContentLoaded', function () {
     priceSlider.noUiSlider.on('update', function (values, handle) {
       const value = values[handle];
       if (handle) {
-        priceInputMax.value = Math.round(value);
+        if (priceInputMax) priceInputMax.value = Math.round(value);
       } else {
-        priceInputMin.value = Math.round(value);
+        if (priceInputMin) priceInputMin.value = Math.round(value);
       }
     });
   }

@@ -1212,6 +1212,22 @@ textarea.input {
   height: auto;
 }
 
+/*--------- проверка*/
+.tab-pane {
+  display: none;
+}
+.tab-pane.active {
+  display: block;
+}
+.tab-pane.fade {
+  opacity: 0;
+  transition: opacity 0.15s linear;
+}
+.tab-pane.fade.in {
+  opacity: 1;
+}
+/*--------проверка*/
+
 .products-slick-nav {
   position: absolute;
   right: 15px;
@@ -2258,3 +2274,110 @@ footer {
     margin-top: 10px;
   }
 }
+
+/*====================================
+Проверка корзины
+=======================================*/
+/* Центрирование содержимого всей таблицы */
+.table {
+  width: 100%;
+  text-align: center; /* Центрирование текста по горизонтали */
+}
+
+/* Центрирование содержимого ячеек */
+.table th,
+.table td {
+  vertical-align: middle; /* Центрирование по вертикали */
+  text-align: center; /* Центрирование по горизонтали */
+  padding: 12px 15px; /* Отступы для ячеек */
+}
+
+/* Стили для карточки товара */
+.product-card-img-z {
+}
+
+.product-card-img-z img {
+  max-width: 80px;
+  margin-bottom: 8px;
+}
+
+/* Стили для поля ввода количества */
+.cart-product-quantity {
+  display: flex;
+  justify-content: center;
+}
+
+.cart-product-quantity .form-control {
+  width: 70px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.top-60 {
+  padding-top: 35px !important;
+}
+/* Стили для кнопки удаления */
+.btn-remove {
+  border: none;
+  background: none;
+}
+
+/*====================================
+Проверка корзины end
+=======================================*/
+
+/*====================================
+Авторизация
+=======================================*/
+
+.login-form {
+  padding: 100px 0;
+  display: flex;
+  justify-content: center;
+  row-gap: 20px;
+}
+.wrapper-form-block {
+  display: flex;
+  flex-direction: column;
+  width: 500px;
+  row-gap: 20px;
+}
+.form-input-block {
+  display: flex;
+  flex-direction: column;
+}
+.form-input-block label {
+  font-weight: 500;
+}
+.form-input-block input {
+  padding: 6px 15px;
+  border-radius: 16px;
+  border: 1px solid #ef233c;
+}
+
+.form-input-block input {
+  padding: 6px 15px;
+  border-radius: 16px;
+  outline: none;
+  border: 1px solid #ef233c;
+}
+
+.form-input-block input:focus {
+  box-shadow: 0 0 0 2px rgba(239, 35, 60, 0.4);
+}
+
+.form-input-block button {
+  border: 1px solid #ef233c;
+  background-color: #ef233c;
+  padding: 6px 0;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 16px;
+}
+
+.form-input-block span {
+  color: #ef233c;
+  border-bottom: 1px solid #ef233c;
+} /*====================================
+Авторизация end
+=======================================*/

@@ -29,10 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const cartTotalQty = document.getElementById('cart-total-qty');
   const cartItemCount = document.getElementById('cart-item-count');
   const cartTotalPrice = document.getElementById('cart-total-price');
-
-  // --- Checkout summary ---
   const checkoutProducts = document.getElementById('checkout-products');
   const checkoutTotal = document.getElementById('checkout-total');
+  const cartTableBody = document.querySelector('.table tbody');
 
   // Загрузка корзины из localStorage
   let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -40,6 +39,96 @@ document.addEventListener('DOMContentLoaded', function () {
   // Сохранение корзины
   function saveCart() {
     localStorage.setItem('cart', JSON.stringify(cart));
+  }
+
+  // Обновление таблицы корзины
+  function updateCartTable() {
+    if (!cartTableBody) return;
+    
+    cartTableBody.innerHTML = '';
+    let totalCartPrice = 0;
+
+    cart.forEach((item, index) => {
+      const itemTotal = item.price * item.qty;
+      totalCartPrice += itemTotal;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>
+          <a href="#" class="product-card-img-z">
+            <img src="${item.img}" alt="${item.name}" />
+            <a href="#">${item.name}</a>
+          </a>
+        </td>
+        <td class="top-60">${item.price.toLocaleString()} сом</td>
+        <td class="top-60">
+          <div class="cart-product-quantity">
+            <input
+              type="number"
+              class="form-control item-qty"
+              value="${item.qty}"
+              min="1"
+              max="10"
+              step="1"
+              data-index="${index}"
+              data-price="${item.price}"
+              required
+            />
+          </div>
+        </td>
+        <td class="top-60 item-total">${itemTotal.toLocaleString()} сом</td>
+        <td class="top-60">
+          <button class="btn-remove" data-index="${index}">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </td>
+      `;
+      cartTableBody.appendChild(row);
+    });
+
+    // Добавляем строку итогов
+    const totalRow = document.createElement('tr');
+    totalRow.innerHTML = `
+        <td></td>
+          
+    <td colspan="3" class="text-end mt-4"><strong>Общая сумма: <strong>${totalCartPrice.toLocaleString()} сом</strong></strong></td>
+
+      <td></td>
+    `;
+    cartTableBody.appendChild(totalRow);
+
+    // Добавляем обработчики событий
+    addCartTableEventListeners();
+  }
+
+  // Добавление обработчиков событий для таблицы корзины
+  function addCartTableEventListeners() {
+    // Обработчики изменения количества
+    document.querySelectorAll('.item-qty').forEach(input => {
+      input.addEventListener('change', function() {
+        const index = this.dataset.index;
+        const newQty = parseInt(this.value);
+        
+        if (newQty >= 1 && newQty <= 10) {
+          cart[index].qty = newQty;
+          saveCart();
+          updateCartDisplay();
+        } else {
+          this.value = cart[index].qty;
+        }
+      });
+    });
+
+    // Обработчики удаления
+    document.querySelectorAll('.btn-remove').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const index = this.dataset.index;
+        cart.splice(index, 1);
+        saveCart();
+        updateCartDisplay();
+      });
+    });
   }
 
   // Обновление блока "Ваш заказ"
@@ -66,40 +155,46 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Обновление отображения корзины
   function updateCartDisplay() {
-    if (!cartList) return;
+    // Обновляем выпадающую корзину
+    if (cartList) {
+      cartList.innerHTML = '';
+      let totalQty = 0;
+      let totalPrice = 0;
+
+      cart.forEach((item, index) => {
+        const productDiv = document.createElement('div');
+        productDiv.classList.add('product-widget', 'cart-item');
+        productDiv.setAttribute('data-index', index);
+        productDiv.innerHTML = `
+          <div class="product-img">
+            <img src="${item.img}" alt="${item.name}" />
+          </div>
+          <div class="product-body">
+            <h3 class="product-name">${item.name}</h3>
+            <h4 class="product-price">${item.qty} x ${item.price} сом</h4>
+          </div>
+          <button class="delete" data-index="${index}">
+            <i class="fa fa-close"></i>
+          </button>
+        `;
+        cartList.appendChild(productDiv);
+
+        totalQty += item.qty;
+        totalPrice += item.price * item.qty;
+      });
+
+      if (cartTotalQty) cartTotalQty.textContent = totalQty;
+      if (cartItemCount) cartItemCount.textContent = cart.length;
+      if (cartTotalPrice) cartTotalPrice.textContent = totalPrice.toFixed(2);
+    }
+
+    // Обновляем таблицу корзины
+    updateCartTable();
     
-    cartList.innerHTML = '';
-    let totalQty = 0;
-    let totalPrice = 0;
-
-    cart.forEach((item, index) => {
-      const productDiv = document.createElement('div');
-      productDiv.classList.add('product-widget', 'cart-item');
-      productDiv.setAttribute('data-index', index);
-      productDiv.innerHTML = `
-        <div class="product-img">
-          <img src="${item.img}" alt="${item.name}" />
-        </div>
-        <div class="product-body">
-          <h3 class="product-name">${item.name}</h3>
-          <h4 class="product-price">${item.qty} x ${item.price} сом</h4>
-        </div>
-        <button class="delete" data-index="${index}">
-          <i class="fa fa-close"></i>
-        </button>
-      `;
-      cartList.appendChild(productDiv);
-
-      totalQty += item.qty;
-      totalPrice += item.price * item.qty;
-    });
-
-    if (cartTotalQty) cartTotalQty.textContent = totalQty;
-    if (cartItemCount) cartItemCount.textContent = cart.length;
-    if (cartTotalPrice) cartTotalPrice.textContent = totalPrice.toFixed(2);
-
+    // Обновляем блок "Ваш заказ"
+    updateCheckoutSummary();
+    
     saveCart();
-    updateCheckoutSummary(); // Обновляем блок "Ваш заказ"
   }
 
   // Инициализация корзины
@@ -149,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Удаление товара
+  // Удаление товара из выпадающей корзины
   if (cartList) {
     cartList.addEventListener('click', function (e) {
       const deleteBtn = e.target.closest('.delete');
@@ -168,6 +263,29 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
+  // --- Tabs для продукта ---
+  const tabLinks = document.querySelectorAll('#product-tab .tab-nav a');
+  const tabPanes = document.querySelectorAll('#product-tab .tab-content .tab-pane');
+
+  function activateTab(e) {
+    e.preventDefault();
+    
+    tabLinks.forEach(link => {
+      link.parentElement.classList.remove('active');
+    });
+    tabPanes.forEach(pane => {
+      pane.classList.remove('in', 'active');
+    });
+
+    const targetTab = this.getAttribute('href');
+    this.parentElement.classList.add('active');
+    document.querySelector(targetTab).classList.add('in', 'active');
+  }
+
+  tabLinks.forEach(link => {
+    link.addEventListener('click', activateTab);
+  });
 
   // --- Products Slick ---
   if (typeof $ !== 'undefined') {
@@ -257,10 +375,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (priceSlider && typeof noUiSlider !== 'undefined') {
     noUiSlider.create(priceSlider, {
-      start: [1, 999],
+      start: [100, 30000],
       connect: true,
       step: 1,
-      range: { min: 1, max: 999 }
+      range: { min: 100, max: 30000 }
     });
 
     priceSlider.noUiSlider.on('update', function (values, handle) {

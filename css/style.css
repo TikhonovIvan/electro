@@ -1310,7 +1310,7 @@ textarea.input {
 
 .price-filter .input-number {
   display: inline-block;
-  width: calc(50% - 7px);
+  width: 140px;
 }
 
 /*----------------------------*\
@@ -1561,7 +1561,7 @@ textarea.input {
 }
 
 .product-details .product-options .input-select {
-  width: 90px;
+  width: 130px;
 }
 
 .product-details .add-to-cart {
@@ -1944,7 +1944,7 @@ textarea.input {
 }
 
 .order-summary .order-col .order-total {
-  font-size: 24px;
+  font-size: 20px;
   color: #d10024;
 }
 

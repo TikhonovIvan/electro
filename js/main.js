@@ -22,26 +22,148 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // --- Корзина ---
-const dropdown = document.querySelector('.dropdown.cart-dropdown-wrapper');
-const toggle = dropdown?.querySelector('.dropdown-toggle');
-const dropdownContent = dropdown?.querySelector('.cart-dropdown');
+  const dropdown = document.querySelector('.dropdown.cart-dropdown-wrapper');
+  const toggle = dropdown?.querySelector('.dropdown-toggle');
+  const dropdownContent = dropdown?.querySelector('.cart-dropdown');
+  const cartList = document.getElementById('cart-list');
+  const cartTotalQty = document.getElementById('cart-total-qty');
+  const cartItemCount = document.getElementById('cart-item-count');
+  const cartTotalPrice = document.getElementById('cart-total-price');
 
+  // Загрузка корзины из localStorage
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-toggle?.addEventListener('click', function (e) {
-  e.preventDefault();
-  e.stopPropagation();
-  dropdown.classList.toggle('open');
-});
+  // Сохранение корзины в localStorage
+  function saveCart() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }
 
-dropdownContent?.addEventListener('click', function (e) {
-  e.stopPropagation();
-});
+  // Обновление отображения корзины
+  function updateCartDisplay() {
+    cartList.innerHTML = '';
+    let totalQty = 0;
+    let totalPrice = 0;
 
-document.addEventListener('click', function () {
-  dropdown.classList.remove('open');
-});
+    cart.forEach((item, index) => {
+      const productDiv = document.createElement('div');
+      productDiv.classList.add('product-widget', 'cart-item');
+      productDiv.setAttribute('data-index', index);
+      productDiv.innerHTML = `
+        <div class="product-img">
+          <img src="${item.img}" alt="${item.name}" />
+        </div>
+        <div class="product-body">
+          <h3 class="product-name">${item.name}</h3>
+          <h4 class="product-price">${item.qty} x ${item.price} сом</h4>
+        </div>
+        <button class="delete" data-index="${index}">
+          <i class="fa fa-close"></i>
+        </button>
+      `;
+      cartList.appendChild(productDiv);
 
-  // --- Products Slick ---
+      totalQty += item.qty;
+      totalPrice += item.price * item.qty;
+    });
+
+    // Мгновенное обновление всех счетчиков
+    updateCartCounters(totalQty, totalPrice);
+    saveCart();
+  }
+
+  // Функция для мгновенного обновления счетчиков
+  function updateCartCounters(totalQty, totalPrice) {
+    cartTotalQty.textContent = totalQty;
+    cartItemCount.textContent = cart.length; // Количество уникальных товаров
+    cartTotalPrice.textContent = totalPrice;
+    
+    // Обновление иконки корзины в шапке
+    const cartIcons = document.querySelectorAll('.cart-icon, .dropdown-toggle');
+    cartIcons.forEach(icon => {
+      const counter = icon.querySelector('.qty, #cart-total-qty');
+      if (counter) {
+        counter.textContent = cart.length;
+      }
+    });
+  }
+
+  // Инициализация корзины
+  updateCartDisplay();
+
+  // Обработчики открытия/закрытия корзины
+  toggle?.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  dropdownContent?.addEventListener('click', function (e) {
+    e.stopPropagation();
+  });
+
+  document.addEventListener('click', function () {
+    dropdown.classList.remove('open');
+  });
+
+  // Добавление товара в корзину
+  document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const id = this.dataset.id;
+      const name = this.dataset.name;
+      const price = parseFloat(this.dataset.price);
+      const img = this.dataset.img;
+      const qtyInput = this.closest('.add-to-cart')?.querySelector('.product-qty');
+      const qty = qtyInput ? parseInt(qtyInput.value) : 1;
+
+      const existingIndex = cart.findIndex(item => item.id === id);
+      
+      if (existingIndex !== -1) {
+        cart[existingIndex].qty += qty;
+      } else {
+        cart.push({ id, name, price, img, qty });
+      }
+
+      // Мгновенное обновление
+      const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+      const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      updateCartCounters(totalQty, totalPrice);
+      
+      // Полное обновление отображения
+      setTimeout(updateCartDisplay, 0);
+    });
+  });
+
+  // Удаление товара из корзины с анимацией
+  cartList.addEventListener('click', function (e) {
+    const deleteBtn = e.target.closest('.delete');
+    if (deleteBtn) {
+      const index = parseInt(deleteBtn.dataset.index);
+      if (!isNaN(index)) {
+        // Анимация удаления
+        const itemToRemove = deleteBtn.closest('.cart-item');
+        itemToRemove.classList.add('removing');
+        
+        // Мгновенное обновление данных
+        const removedQty = cart[index].qty;
+        const removedPrice = cart[index].price * cart[index].qty;
+        cart.splice(index, 1);
+        
+        // Мгновенное обновление счетчиков
+        const totalQty = parseInt(cartTotalQty.textContent) - removedQty;
+        const totalPrice = parseInt(cartTotalPrice.textContent) - removedPrice;
+        updateCartCounters(totalQty, totalPrice);
+        
+        // Полное обновление после анимации
+        setTimeout(() => {
+          updateCartDisplay();
+          saveCart();
+        }, 300);
+      }
+    }
+  });
+
+  
+  // --- Остальной код (слайдеры и прочее) ---
   document.querySelectorAll('.products-slick').forEach(el => {
     const nav = el.getAttribute('data-nav');
     $(el).slick({
@@ -60,7 +182,6 @@ document.addEventListener('click', function () {
     });
   });
 
-  // --- Products Widget Slick ---
   document.querySelectorAll('.products-widget-slick').forEach(el => {
     const nav = el.getAttribute('data-nav');
     $(el).slick({
@@ -73,7 +194,6 @@ document.addEventListener('click', function () {
     });
   });
 
-  // --- Product Main img Slick ---
   if ($('#product-main-img').length) {
     $('#product-main-img').slick({
       infinite: true,
@@ -101,11 +221,10 @@ document.addEventListener('click', function () {
       ]
     });
 
-    // --- Product img zoom ---
-    $('#product-main-img .product-preview').zoom(); // jQuery Zoom
+    $('#product-main-img .product-preview').zoom();
   }
 
-  // --- Input Number ---
+  // Обработчики количества товаров
   document.querySelectorAll('.input-number').forEach(el => {
     const input = el.querySelector('input[type="number"]');
     const up = el.querySelector('.qty-up');
@@ -113,64 +232,36 @@ document.addEventListener('click', function () {
 
     down.addEventListener('click', () => {
       let value = parseInt(input.value) - 1;
-      value = value < 1 ? 1 : value;
-      input.value = value;
+      input.value = value < 1 ? 1 : value;
       input.dispatchEvent(new Event('change'));
-      updatePriceSlider(el, value);
     });
 
     up.addEventListener('click', () => {
-      let value = parseInt(input.value) + 1;
-      input.value = value;
+      input.value = parseInt(input.value) + 1;
       input.dispatchEvent(new Event('change'));
-      updatePriceSlider(el, value);
     });
   });
 
+  // Фильтр по цене
   const priceInputMax = document.getElementById('price-max');
   const priceInputMin = document.getElementById('price-min');
-
-  if (priceInputMax) {
-    priceInputMax.addEventListener('change', function () {
-      updatePriceSlider(this.parentElement, this.value);
-    });
-  }
-
-  if (priceInputMin) {
-    priceInputMin.addEventListener('change', function () {
-      updatePriceSlider(this.parentElement, this.value);
-    });
-  }
-
-  // --- Price Slider ---
   const priceSlider = document.getElementById('price-slider');
+
   if (priceSlider) {
     noUiSlider.create(priceSlider, {
       start: [1, 999],
       connect: true,
       step: 1,
-      range: {
-        min: 1,
-        max: 999
-      }
+      range: { min: 1, max: 999 }
     });
 
     priceSlider.noUiSlider.on('update', function (values, handle) {
       const value = values[handle];
       if (handle) {
-        priceInputMax.value = value;
+        priceInputMax.value = Math.round(value);
       } else {
-        priceInputMin.value = value;
+        priceInputMin.value = Math.round(value);
       }
     });
-  }
-
-  function updatePriceSlider(elem, value) {
-    if (!priceSlider || !priceSlider.noUiSlider) return;
-    if (elem.classList.contains('price-min')) {
-      priceSlider.noUiSlider.set([value, null]);
-    } else if (elem.classList.contains('price-max')) {
-      priceSlider.noUiSlider.set([null, value]);
-    }
   }
 });
